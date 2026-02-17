@@ -14,10 +14,39 @@ exports.getAllBooks = async (req, res) => {
 
 exports.createBook = async (req, res) => {
     try {
-        const book = new Book(req.body);
+        const { title, author, category, isbn, price, language, coverImage, fileUrl, description, pages } = req.body;
+
+        // Basic Validation
+        if (!title || !author || !category || !price || !coverImage) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        // Prepare book object
+        const bookData = {
+            title,
+            author,
+            category,
+            price: Number(price), // Ensure number
+            pages: pages ? Number(pages) : 0, // Ensure number
+            language: language || 'English',
+            coverImage,
+            description,
+            fileUrl
+        };
+
+        // Handle optional ISBN: only add if provided and not empty
+        if (isbn && isbn.trim() !== '') {
+            bookData.isbn = isbn;
+        }
+
+        const book = new Book(bookData);
         await book.save();
         res.status(201).json(book);
     } catch (error) {
+        console.error('Create Book Error:', error);
+        if (error.code === 11000) {
+            return res.status(400).json({ error: 'Duplicate ISBN found. ISBN must be unique.' });
+        }
         res.status(500).json({ error: error.message });
     }
 };
@@ -76,7 +105,17 @@ exports.getBookContent = async (req, res) => {
              return res.status(404).json({ message: 'Book or file not found' });
         }
 
-        // Extract filename from URL or path
+        // If file is remote (Cloudinary), return URL directly
+        // Frontend handles PDF display if content is empty
+        if (book.fileUrl.startsWith('http')) {
+             return res.json({ 
+                 content: '', 
+                 fileUrl: book.fileUrl,
+                 totalPages: 0 
+             });
+        }
+
+        // Local file handling
         const filename = path.basename(book.fileUrl); 
         const filePath = path.join(__dirname, '..', 'uploads', filename);
 

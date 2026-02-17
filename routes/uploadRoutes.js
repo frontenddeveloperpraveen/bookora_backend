@@ -1,41 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
+const { storage } = require('../config/cloudinary');
 
-const storage = multer.diskStorage({
-    destination(req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename(req, file, cb) {
-        // Generate random filename with no spaces
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, `file-${uniqueSuffix}${ext}`);
-    },
-});
-
-
-
-// Custom file filter with logging
-const fileFilter = (req, file, cb) => {
-    console.log('Incoming file:', file.originalname, file.mimetype);
-    const filetypes = /jpg|jpeg|png|pdf|epub/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
-
-    if (extname && mimetype) {
-        return cb(null, true);
-    } else {
-        console.error('File type error:', file.mimetype, path.extname(file.originalname));
-        cb(new Error('Error: Only Images and PDFs/EPUBs are allowed!'));
-    }
-};
-
+// Multer upload configuration
 const upload = multer({
-    storage,
+    storage: storage,
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
-    fileFilter: fileFilter
+    fileFilter: (req, file, cb) => {
+        // Optional file type validation, currently handled by Cloudinary storage logic mostly
+        // but adding an extra layer is safer
+        const allowedTypes = /jpg|jpeg|png|pdf|epub/;
+        const extname = allowedTypes.test(file.originalname.toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+
+        if (extname || mimetype) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Error: Only Images and PDFs/EPUBs are allowed!'));
+        }
+    }
 });
 
 router.post('/', (req, res) => {
@@ -57,11 +41,14 @@ router.post('/', (req, res) => {
         }
 
         console.log('File uploaded successfully:', req.file.path);
+        
+        // Return the Cloudinary URL directly
+        // The frontend handles full URLs correctly (as seen in api.js getImageUrl)
         try {
-            res.send(req.file.filename);
+            res.send(req.file.path);
         } catch (error) {
             console.error('Response Error:', error);
-            res.status(500).json({ error: 'Failed to process file path' });
+            res.status(500).json({ error: 'Failed to return file path' });
         }
     });
 });
