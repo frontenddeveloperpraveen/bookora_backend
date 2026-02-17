@@ -16,13 +16,7 @@ const path = require("path");
 
 // Database Connection
 mongoose
-  .connect(
-    "mongodb+srv://dineshbooks07_db_user:rj4wBn2KpsdQ2zzH@ebook.ykvg7aq.mongodb.net/Bookora",
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    },
-  )
+  .connect("mongodb+srv://dineshbooks07_db_user:rj4wBn2KpsdQ2zzH@ebook.ykvg7aq.mongodb.net/Bookora")
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log(err));
 
