@@ -17,8 +17,7 @@ const path = require("path");
 // Database Connection
 mongoose
   .connect(
-    process.env.MONGODB_URI ||
-      "mongodb+srv://dineshbooks07_db_user:rj4wBn2KpsdQ2zzH@ebook.ykvg7aq.mongodb.net/",
+    "mongodb+srv://dineshbooks07_db_user:rj4wBn2KpsdQ2zzH@ebook.ykvg7aq.mongodb.net/Bookora",
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
